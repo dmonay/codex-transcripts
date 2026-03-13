@@ -44,6 +44,7 @@ PROMPTS_PER_PAGE = 5
 LONG_TEXT_THRESHOLD = (
     300  # Characters - text blocks longer than this are shown in index
 )
+LOCAL_TIMEZONE = datetime.now().astimezone().tzinfo
 
 
 def extract_text_from_content(content):
@@ -446,6 +447,27 @@ def _timestamp_to_epoch_seconds(timestamp):
         return int(datetime.fromisoformat(ts).timestamp())
     except ValueError:
         return 0
+
+
+def format_timestamp_hover_title(timestamp):
+    if not isinstance(timestamp, str) or not timestamp.strip():
+        return ""
+    ts = timestamp.strip()
+    if ts.endswith("Z"):
+        ts = ts[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(ts)
+    except ValueError:
+        return timestamp
+
+    local_dt = dt.astimezone(LOCAL_TIMEZONE)
+    hour = local_dt.strftime("%I").lstrip("0") or "0"
+    tzname = local_dt.tzname() or local_dt.strftime("%Z")
+    return (
+        f"{local_dt.strftime('%A')}, {local_dt.strftime('%B')} {local_dt.day}, "
+        f"{local_dt.year} {hour}:{local_dt.strftime('%M')} "
+        f"{local_dt.strftime('%p')} {tzname}"
+    )
 
 
 def _write_archive_search_assets(output_dir, search_entries):
@@ -1223,7 +1245,10 @@ def render_message(log_type, message_json, timestamp):
     if not content_html.strip():
         return ""
     msg_id = make_msg_id(timestamp)
-    return _macros.message(role_class, role_label, msg_id, timestamp, content_html)
+    timestamp_title = format_timestamp_hover_title(timestamp)
+    return _macros.message(
+        role_class, role_label, msg_id, timestamp, timestamp_title, content_html
+    )
 
 
 CSS = """
@@ -1246,6 +1271,7 @@ h1 { font-size: 1.5rem; margin-bottom: 24px; padding-bottom: 8px; border-bottom:
 .user .role-label { color: var(--user-border); }
 time { color: var(--text-muted); font-size: 0.8rem; }
 .timestamp-link { color: inherit; text-decoration: none; }
+.timestamp-link time[title] { cursor: help; }
 .timestamp-link:hover { text-decoration: underline; }
 .message:target { animation: highlight 2s ease-out; }
 @keyframes highlight { 0% { background-color: rgba(77, 163, 255, 0.25); } 100% { background-color: transparent; } }

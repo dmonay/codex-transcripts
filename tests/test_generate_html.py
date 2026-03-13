@@ -2,7 +2,9 @@
 
 import tempfile
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
+import codex_transcripts
 import pytest
 
 from codex_transcripts import (
@@ -178,3 +180,28 @@ def test_generate_html_orders_pages_newest_first(output_dir):
 
     # Within a conversation bucket, newest messages should come first too.
     assert index_html.index("Reply 6") < index_html.index("Prompt 6")
+
+
+def test_generate_html_message_timestamp_has_full_date_hover_title(
+    output_dir, monkeypatch
+):
+    monkeypatch.setattr(
+        codex_transcripts, "LOCAL_TIMEZONE", ZoneInfo("America/New_York"), raising=False
+    )
+
+    session = output_dir / "session.jsonl"
+    session.write_text(
+        "\n".join(
+            [
+                '{"timestamp":"2026-03-13T01:22:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Prompt"}]}}',
+                '{"timestamp":"2026-03-13T01:22:01.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Reply"}]}}',
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    generate_html(session, output_dir)
+
+    index_html = (output_dir / "index.html").read_text(encoding="utf-8")
+    assert 'title="Thursday, March 12, 2026 9:22 PM EDT"' in index_html
