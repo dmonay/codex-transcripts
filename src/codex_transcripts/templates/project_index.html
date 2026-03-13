@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project_name }} - Codex Archive{% endblock %}
+
+{% block content %}
+        <div class="header-row">
+            <h1><a href="../index.html" style="color: inherit; text-decoration: none;">Codex Archive</a> / {{ project_name }}</h1>
+            {% if search_enabled %}
+            <div id="search-box" role="search">
+                <a class="home-btn" href="{{ archive_root }}index.html">Home</a>
+                <select id="search-project-select"></select>
+                <select id="search-sort-select"></select>
+                <input id="search-input" type="search" placeholder="Search sessions" autocomplete="off">
+                <button id="search-btn" type="button">Search</button>
+            </div>
+            {% endif %}
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">{{ session_count }} session{% if session_count != 1 %}s{% endif %}</p>
+
+        {% for session in sessions %}
+        <div class="index-item">
+            <a href="{{ session.name }}/index.html">
+                <div class="index-item-header">
+                    <span class="index-item-number">{{ session.date }}</span>
+                    <span class="index-item-actions">
+                        <span style="color: var(--text-muted);">{{ "%.0f"|format(session.size_kb) }} KB</span>
+                        {% if session.original_relpath %}
+                        <button class="fav-btn fav-btn--sm" type="button" data-codex-fav-relpath="{{ session.original_relpath }}">Fav</button>
+                        <button class="danger-btn danger-btn--sm" type="button" data-codex-delete-relpath="{{ session.original_relpath }}">Delete</button>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="index-item-content">
+                    <p style="margin: 0;">{{ session.summary[:100] }}{% if session.summary|length > 100 %}...{% endif %}</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+
+        <div style="margin-top: 24px;">
+            <a href="../index.html" class="pagination" style="display: inline-block; padding: 8px 16px; background: var(--user-border); color: white; text-decoration: none; border-radius: 6px;">Back to Archive</a>
+        </div>
+
+        {% if search_enabled %}
+        <dialog id="search-modal">
+            <div class="search-modal-header">
+                <select id="modal-project-select"></select>
+                <select id="modal-sort-select"></select>
+                <input id="modal-search-input" type="search" placeholder="Search sessions" autocomplete="off">
+                <button id="modal-search-btn" type="button">Search</button>
+                <button id="modal-close-btn" type="button">Close</button>
+            </div>
+            <div id="search-status"></div>
+            <div id="search-results"></div>
+        </dialog>
+        {% endif %}
+{%- endblock %}
+
+{% block extra_scripts %}
+        {% if search_enabled %}
+        <script>
+            window.__CODEX_ARCHIVE_ROOT = "{{ archive_root }}";
+            window.__CODEX_TRANSCRIPTS_DEFAULT_PROJECT = "{{ project_dir }}";
+        </script>
+        <script src="{{ archive_root }}search_index.js"></script>
+        <script src="{{ archive_root }}search_ui.js"></script>
+        {% endif %}
+{%- endblock %}

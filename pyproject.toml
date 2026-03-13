@@ -1,0 +1,30 @@
+[project]
+name = "codex-transcripts"
+version = "0.1"
+description = "Convert Codex CLI session files to HTML transcripts"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [
+    { name = "Daniel Monay" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "click",
+    "click-default-group",
+    "httpx",
+    "jinja2",
+    "markdown",
+]
+
+[project.scripts]
+codex-transcripts = "codex_transcripts:main"
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=24.0.0",
+    "pytest>=9.0.2",
+]

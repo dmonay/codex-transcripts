@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Codex transcript{% endblock %}</title>
+    <style>{{ css|safe }}</style>
+</head>
+<body>
+    <div class="container">
+{%- block content %}{% endblock %}
+    </div>
+    <script>{{ js|safe }}</script>
+{%- block extra_scripts %}{% endblock %}
+    <script>
+    (function() {
+        function isHTTP() {
+            return window.location && (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+        }
+
+        async function getFavorites() {
+            var res = await fetch('/api/favorites', { cache: 'no-store' });
+            if (!res.ok) return { favorites: [] };
+            try {
+                var data = await res.json();
+                if (data && Array.isArray(data.favorites)) return data;
+            } catch (e) {}
+            return { favorites: [] };
+        }
+
+        async function setFavorite(originalRelpath, nicknameOrEmptyToRemove) {
+            var nickname = (nicknameOrEmptyToRemove || '').trim();
+            var body = null;
+            if (!nickname) {
+                body = { original_relpath: originalRelpath, favorite: false };
+            } else {
+                body = { original_relpath: originalRelpath, favorite: true, nickname: nickname };
+            }
+            var res = await fetch('/api/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            var data = null;
+            try { data = await res.json(); } catch (e) {}
+            if (!res.ok) {
+                var msg = (data && data.error) ? data.error : ('Favorite failed (' + res.status + ')');
+                throw new Error(msg);
+            }
+            return data;
+        }
+
+        async function deleteTranscript(originalRelpath) {
+            var res = await fetch('/api/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ original_relpath: originalRelpath })
+            });
+            var data = null;
+            try { data = await res.json(); } catch (e) {}
+            if (!res.ok) {
+                var msg = (data && data.error) ? data.error : ('Delete failed (' + res.status + ')');
+                throw new Error(msg);
+            }
+            return data;
+        }
+
+        function applyFavoritesToButtons(favoritesByRelpath) {
+            var btns = document.querySelectorAll('[data-codex-fav-relpath]');
+            for (var i = 0; i < btns.length; i++) {
+                var btn = btns[i];
+                var rel = (btn.getAttribute('data-codex-fav-relpath') || '').trim();
+                if (!rel) continue;
+
+                var fav = favoritesByRelpath[rel] || null;
+                var label = (btn.getAttribute('data-codex-fav-label') || '').trim() || 'Fav';
+                if (fav) {
+                    btn.setAttribute('data-favorited', '1');
+                    btn.textContent = label;
+                    btn.title = fav.nickname ? ('Favorite: ' + fav.nickname) : 'Favorite';
+                } else {
+                    btn.removeAttribute('data-favorited');
+                    btn.textContent = label;
+                    btn.title = 'Favorite';
+                }
+            }
+        }
+
+        function renderFavoritesSection(favorites) {
+            var section = document.getElementById('codex-favorites-section');
+            if (!section) return;
+            section.style.display = 'block';
+
+            var list = document.getElementById('codex-favorites-list');
+            var empty = document.getElementById('codex-favorites-empty');
+            var countEl = document.getElementById('codex-favorites-count');
+            if (!list || !empty) return;
+
+            list.textContent = '';
+            if (!favorites || favorites.length === 0) {
+                empty.style.display = 'block';
+                if (countEl) countEl.textContent = '';
+                return;
+            }
+            empty.style.display = 'none';
+            if (countEl) countEl.textContent = favorites.length + ' saved';
+
+            for (var i = 0; i < favorites.length; i++) {
+                var fav = favorites[i];
+                if (!fav) continue;
+
+                var item = document.createElement('div');
+                item.className = 'index-item index-item--favorite';
+
+                var a = document.createElement('a');
+                a.href = fav.href || '#';
+                if (!fav.href) a.addEventListener('click', function(ev) { ev.preventDefault(); });
+
+                var header = document.createElement('div');
+                header.className = 'index-item-header';
+
+                var left = document.createElement('span');
+                left.className = 'index-item-number';
+                left.textContent = fav.nickname || fav.session || 'Favorite';
+
+                var actions = document.createElement('span');
+                actions.className = 'index-item-actions';
+
+                var right = document.createElement('time');
+                right.textContent = fav.project || '';
+                actions.appendChild(right);
+
+                if (fav.original_relpath) {
+                    var editBtn = document.createElement('button');
+                    editBtn.className = 'fav-btn fav-btn--sm';
+                    editBtn.type = 'button';
+                    editBtn.textContent = 'Edit';
+                    editBtn.setAttribute('data-codex-fav-relpath', fav.original_relpath);
+                    editBtn.setAttribute('data-codex-fav-label', 'Edit');
+                    actions.appendChild(editBtn);
+                }
+
+                header.appendChild(left);
+                header.appendChild(actions);
+
+                var content = document.createElement('div');
+                content.className = 'index-item-content';
+                var p = document.createElement('p');
+                p.style.margin = '0';
+                var label = '';
+                if (fav.project && fav.session) label = fav.project + ' / ' + fav.session;
+                else if (fav.session) label = fav.session;
+                else label = fav.original_relpath || '';
+                p.textContent = label;
+                content.appendChild(p);
+
+                a.appendChild(header);
+                a.appendChild(content);
+                item.appendChild(a);
+                list.appendChild(item);
+            }
+        }
+
+        function ensureUpdateBanner() {
+            var existing = document.getElementById('codex-update-banner');
+            if (existing) return existing;
+            var banner = document.createElement('div');
+            banner.id = 'codex-update-banner';
+            banner.style.position = 'fixed';
+            banner.style.left = '0';
+            banner.style.right = '0';
+            banner.style.bottom = '12px';
+            banner.style.margin = '0 auto';
+            banner.style.maxWidth = '900px';
+            banner.style.background = 'rgba(13, 42, 74, 0.95)';
+            banner.style.border = '1px solid rgba(120, 181, 255, 0.25)';
+            banner.style.borderRadius = '12px';
+            banner.style.padding = '10px 14px';
+            banner.style.display = 'none';
+            banner.style.alignItems = 'center';
+            banner.style.justifyContent = 'space-between';
+            banner.style.gap = '12px';
+            banner.style.boxShadow = '0 20px 60px rgba(0,0,0,0.45)';
+            banner.innerHTML = '<span style="color: rgba(155, 176, 203, 0.95); font-size: 0.9rem;">New transcript updates available</span>';
+
+            var btn = document.createElement('button');
+            btn.className = 'home-btn';
+            btn.type = 'button';
+            btn.textContent = 'Reload';
+            btn.addEventListener('click', function() { window.location.reload(); });
+            banner.appendChild(btn);
+
+            document.body.appendChild(banner);
+            return banner;
+        }
+
+        async function checkBuild() {
+            try {
+                var res = await fetch('/api/build', { cache: 'no-store' });
+                if (!res.ok) return;
+                var data = await res.json();
+                var buildId = (data && typeof data.build_id === 'number') ? data.build_id : null;
+                if (buildId === null) return;
+                if (lastBuildId === null) {
+                    lastBuildId = buildId;
+                    return;
+                }
+                // build_id changes on rebuilds; it may also reset if the server restarts.
+                if (buildId === lastBuildId) return;
+                lastBuildId = buildId;
+
+                if (window.__CODEX_TRANSCRIPTS_AUTO_RELOAD) {
+                    window.location.reload();
+                    return;
+                }
+                var banner = ensureUpdateBanner();
+                banner.style.display = 'flex';
+            } catch (e) {
+                // Ignore build polling errors.
+            }
+        }
+
+        var lastBuildId = null;
+        var favoritesByRelpath = {};
+        if (isHTTP()) {
+            checkBuild();
+            setInterval(checkBuild, 5000);
+
+            getFavorites().then(function(data) {
+                var favs = (data && Array.isArray(data.favorites)) ? data.favorites : [];
+                favoritesByRelpath = {};
+                for (var i = 0; i < favs.length; i++) {
+                    var f = favs[i];
+                    if (!f || !f.original_relpath) continue;
+                    favoritesByRelpath[f.original_relpath] = f;
+                }
+                applyFavoritesToButtons(favoritesByRelpath);
+                renderFavoritesSection(favs);
+            }).catch(function() {});
+        }
+
+        document.addEventListener('click', async function(ev) {
+            var target = ev.target;
+            if (!target) return;
+            var btn = target.closest ? target.closest('[data-codex-delete-relpath]') : null;
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            if (!isHTTP()) {
+                alert('Delete requires running codex-transcriptsd (http://localhost:7878).');
+                return;
+            }
+
+            var relpath = btn.getAttribute('data-codex-delete-relpath') || '';
+            relpath = relpath.trim();
+            if (!relpath) return;
+
+            if (!confirm('Delete this transcript from ~/.codex/sessions?\\n\\n' + relpath)) {
+                return;
+            }
+
+            btn.disabled = true;
+            try {
+                await deleteTranscript(relpath);
+                var root = window.__CODEX_ARCHIVE_ROOT || '';
+                window.location.href = root + 'index.html';
+            } catch (e) {
+                alert(e && e.message ? e.message : String(e));
+                btn.disabled = false;
+            }
+        });
+
+        document.addEventListener('click', async function(ev) {
+            var target = ev.target;
+            if (!target) return;
+            var btn = target.closest ? target.closest('[data-codex-fav-relpath]') : null;
+            if (!btn) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+
+            if (!isHTTP()) {
+                alert('Favorites require running codex-transcriptsd (http://localhost:7878).');
+                return;
+            }
+
+            var relpath = btn.getAttribute('data-codex-fav-relpath') || '';
+            relpath = relpath.trim();
+            if (!relpath) return;
+
+            var current = favoritesByRelpath[relpath] || null;
+            var currentNick = (current && current.nickname) ? current.nickname : '';
+            var nick = prompt('Favorite nickname (blank to remove):', currentNick);
+            if (nick === null) return;
+
+            btn.disabled = true;
+            try {
+                await setFavorite(relpath, nick);
+                var data = await getFavorites();
+                var favs = (data && Array.isArray(data.favorites)) ? data.favorites : [];
+                favoritesByRelpath = {};
+                for (var i = 0; i < favs.length; i++) {
+                    var f = favs[i];
+                    if (!f || !f.original_relpath) continue;
+                    favoritesByRelpath[f.original_relpath] = f;
+                }
+                applyFavoritesToButtons(favoritesByRelpath);
+                renderFavoritesSection(favs);
+            } catch (e) {
+                alert(e && e.message ? e.message : String(e));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    })();
+    </script>
+</body>
+</html>

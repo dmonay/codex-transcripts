@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Codex Archive{% endblock %}
+
+{% block content %}
+        <div class="header-row">
+            <h1>Codex Archive</h1>
+            {% if search_enabled %}
+            <div id="search-box" role="search">
+                <a class="home-btn" href="{{ archive_root }}index.html">Home</a>
+                <select id="search-project-select"></select>
+                <select id="search-sort-select"></select>
+                <input id="search-input" type="search" placeholder="Search sessions" autocomplete="off">
+                <button id="search-btn" type="button">Search</button>
+            </div>
+            {% endif %}
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 24px;">{{ total_projects }} projects · {{ total_sessions }} sessions</p>
+
+        <section id="codex-favorites-section" class="favorites-section" style="display: none;">
+            <div class="section-header">
+                <h2 class="section-title">Favorites</h2>
+                <span id="codex-favorites-count" class="section-meta"></span>
+            </div>
+            <div id="codex-favorites-list" class="favorites-list"></div>
+            <p id="codex-favorites-empty" class="section-empty">No favorites yet.</p>
+        </section>
+
+        <div id="codex-projects-divider" class="section-divider">
+            <h2 class="section-title">All Projects</h2>
+        </div>
+
+        <div id="codex-projects-list">
+        {% for project in projects %}
+        <div class="index-item">
+            <a href="{{ project.name }}/index.html">
+                <div class="index-item-header">
+                    <span class="index-item-number">{{ project.display_name }}</span>
+                    <time>{{ project.recent_date }}</time>
+                </div>
+                <div class="index-item-content">
+                    <p style="margin: 0;">{{ project.session_count }} session{% if project.session_count != 1 %}s{% endif %}</p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+        </div>
+
+        {% if search_enabled %}
+        <dialog id="search-modal">
+            <div class="search-modal-header">
+                <select id="modal-project-select"></select>
+                <select id="modal-sort-select"></select>
+                <input id="modal-search-input" type="search" placeholder="Search sessions" autocomplete="off">
+                <button id="modal-search-btn" type="button">Search</button>
+                <button id="modal-close-btn" type="button">Close</button>
+            </div>
+            <div id="search-status"></div>
+            <div id="search-results"></div>
+        </dialog>
+        {% endif %}
+{%- endblock %}
+
+{% block extra_scripts %}
+        {% if search_enabled %}
+        <script>
+            window.__CODEX_ARCHIVE_ROOT = "{{ archive_root }}";
+            window.__CODEX_TRANSCRIPTS_DEFAULT_PROJECT = "{{ project_dir }}";
+        </script>
+        <script src="{{ archive_root }}search_index.js"></script>
+        <script src="{{ archive_root }}search_ui.js"></script>
+        {% endif %}
+{%- endblock %}

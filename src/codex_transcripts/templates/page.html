@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Codex transcript - page {{ page_num }}{% endblock %}
+
+{% block content %}
+        <div class="header-row">
+            <h1><a href="index.html" style="color: inherit; text-decoration: none;">Codex transcript</a> - page {{ page_num }}/{{ total_pages }}</h1>
+            {% if search_enabled %}
+            <div id="search-box" role="search">
+                <a class="home-btn" href="{{ archive_root }}index.html">Home</a>
+                {% if session_meta and session_meta.get('original_relpath') %}
+                <button class="fav-btn" type="button" data-codex-fav-relpath="{{ session_meta.get('original_relpath') }}">Fav</button>
+                <button class="danger-btn" type="button" data-codex-delete-relpath="{{ session_meta.get('original_relpath') }}">Delete</button>
+                {% endif %}
+                <select id="search-project-select"></select>
+                <select id="search-sort-select"></select>
+                <input id="search-input" type="search" placeholder="Search sessions" autocomplete="off">
+                <button id="search-btn" type="button">Search</button>
+            </div>
+            {% endif %}
+        </div>
+        {{ pagination_html|safe }}
+        {{ messages_html|safe }}
+        {{ pagination_html|safe }}
+
+        {% if search_enabled %}
+        <dialog id="search-modal">
+            <div class="search-modal-header">
+                <select id="modal-project-select"></select>
+                <select id="modal-sort-select"></select>
+                <input id="modal-search-input" type="search" placeholder="Search sessions" autocomplete="off">
+                <button id="modal-search-btn" type="button">Search</button>
+                <button id="modal-close-btn" type="button">Close</button>
+            </div>
+            <div id="search-status"></div>
+            <div id="search-results"></div>
+        </dialog>
+        {% endif %}
+{%- endblock %}
+
+{% block extra_scripts %}
+        {% if search_enabled %}
+        <script>
+            window.__CODEX_ARCHIVE_ROOT = "{{ archive_root }}";
+            window.__CODEX_TRANSCRIPTS_DEFAULT_PROJECT = "{{ project_dir }}";
+            window.__CODEX_TRANSCRIPTS_AUTO_RELOAD = true;
+        </script>
+        <script src="{{ archive_root }}search_index.js"></script>
+        <script src="{{ archive_root }}search_ui.js"></script>
+        {% endif %}
+{%- endblock %}

@@ -1,0 +1,17 @@
+{"timestamp":"2026-01-01T00:00:00.000Z","type":"session_meta","payload":{"id":"sess-123","timestamp":"2026-01-01T00:00:00.000Z","cwd":"/Users/test/project","originator":"codex_cli_rs","cli_version":"0.85.0","instructions":"(instructions omitted)","source":"cli","model_provider":"openai","git":{"commit_hash":"deadbeef","branch":"main","repository_url":"git@github.com:example/project.git"}}}
+{"timestamp":"2026-01-01T00:00:01.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"# AGENTS.md instructions for /Users/test/project\n\n<INSTRUCTIONS>\nThis is meta.\n</INSTRUCTIONS>"}]}}
+{"timestamp":"2026-01-01T00:00:02.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Create a hello world function"}]}}
+{"timestamp":"2026-01-01T00:00:03.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"I'll create that function for you."}]}}
+{"timestamp":"2026-01-01T00:00:04.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"git commit -m 'Add hello'\"}","call_id":"call_1"}}
+{"timestamp":"2026-01-01T00:00:05.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call_1","output":"[main abc1234] Add hello\\n 1 file changed"}}
+{"timestamp":"2026-01-01T00:00:06.000Z","type":"response_item","payload":{"type":"reasoning","summary":[{"type":"summary_text","text":"I will now add tests."}]}}
+{"timestamp":"2026-01-01T00:01:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Now add a goodbye function"}]}}
+{"timestamp":"2026-01-01T00:01:01.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Done."}]}}
+{"timestamp":"2026-01-01T00:02:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Here is an image:"},{"type":"input_image","image_url":"data:image/gif;base64,R0lGODlhAQABAPAAAP///wAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=="}]}}
+{"timestamp":"2026-01-01T00:02:01.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Thanks for the image."}]}}
+{"timestamp":"2026-01-01T00:03:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Prompt four"}]}}
+{"timestamp":"2026-01-01T00:03:01.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Reply four"}]}}
+{"timestamp":"2026-01-01T00:04:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Prompt five"}]}}
+{"timestamp":"2026-01-01T00:04:01.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Reply five"}]}}
+{"timestamp":"2026-01-01T00:05:00.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"Prompt six"}]}}
+{"timestamp":"2026-01-01T00:05:01.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Reply six"}]}}
