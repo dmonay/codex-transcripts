@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Codex transcript{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%234da3ff'/%3E%3Cstop offset='100%25' stop-color='%2360a5fa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='6' fill='%230b1220'/%3E%3Crect x='4' y='6' width='24' height='5' rx='2.5' fill='url(%23g)' opacity='.9'/%3E%3Crect x='4' y='13.5' width='18' height='5' rx='2.5' fill='url(%23g)' opacity='.5'/%3E%3Crect x='4' y='21' width='21' height='5' rx='2.5' fill='url(%23g)' opacity='.7'/%3E%3C/svg%3E">
     <style>{{ css|safe }}</style>
 </head>
 <body>
@@ -194,6 +195,7 @@
             return banner;
         }
 
+        var reloadTimer = null;
         async function checkBuild() {
             try {
                 var res = await fetch('/api/build', { cache: 'no-store' });
@@ -205,12 +207,13 @@
                     lastBuildId = buildId;
                     return;
                 }
-                // build_id changes on rebuilds; it may also reset if the server restarts.
                 if (buildId === lastBuildId) return;
                 lastBuildId = buildId;
 
                 if (window.__CODEX_TRANSCRIPTS_AUTO_RELOAD) {
-                    window.location.reload();
+                    // Debounce: wait for builds to stabilize before reloading.
+                    if (reloadTimer) clearTimeout(reloadTimer);
+                    reloadTimer = setTimeout(function() { window.location.reload(); }, 8000);
                     return;
                 }
                 var banner = ensureUpdateBanner();

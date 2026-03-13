@@ -1,4 +1,41 @@
-{# Pagination for regular pages #}
+{# Truncated page range: first 2, window around current ±2, last 2. Returns list of ints and 0 for ellipsis. #}
+{%- macro _page_range(current, total) -%}
+{# Compute visible pages #}
+{%- set pages = [] -%}
+{%- for p in range(1, total + 1) -%}
+{%- if p <= 2 or p > total - 2 or (p >= current - 2 and p <= current + 2) -%}
+{%- if pages and pages[-1] != p - 1 and pages[-1] != 0 -%}
+{%- set _ = pages.append(0) -%}
+{%- endif -%}
+{%- set _ = pages.append(p) -%}
+{%- endif -%}
+{%- endfor -%}
+{{ pages|join(',') }}
+{%- endmacro -%}
+
+{# Compact top pagination: Index + Prev/Next + page info #}
+{% macro pagination_compact(current_page, total_pages) %}
+{% if total_pages <= 1 %}
+<div class="pagination-compact"><a href="index.html" class="index-link">Index</a></div>
+{%- else %}
+<div class="pagination-compact">
+<a href="index.html" class="index-link">Index</a>
+{% if current_page > 1 -%}
+<a href="page-{{ '%03d'|format(current_page - 1) }}.html">&larr; Prev</a>
+{%- else -%}
+<span class="disabled">&larr; Prev</span>
+{%- endif %}
+<span class="page-info">Page {{ current_page }} of {{ total_pages }}</span>
+{% if current_page < total_pages -%}
+<a href="page-{{ '%03d'|format(current_page + 1) }}.html">Next &rarr;</a>
+{%- else -%}
+<span class="disabled">Next &rarr;</span>
+{%- endif %}
+</div>
+{%- endif %}
+{% endmacro %}
+
+{# Full bottom pagination with truncated page numbers #}
 {% macro pagination(current_page, total_pages) %}
 {% if total_pages <= 1 %}
 <div class="pagination"><a href="index.html" class="index-link">Index</a></div>
@@ -10,11 +47,15 @@
 {%- else -%}
 <span class="disabled">&larr; Prev</span>
 {%- endif %}
-{% for page in range(1, total_pages + 1) -%}
-{% if page == current_page -%}
-<span class="current">{{ page }}</span>
+{%- set page_list = _page_range(current_page, total_pages).split(',') -%}
+{% for p_str in page_list -%}
+{%- set p = p_str|trim|int -%}
+{% if p == 0 -%}
+<span class="ellipsis">&hellip;</span>
+{%- elif p == current_page -%}
+<span class="current">{{ p }}</span>
 {%- else -%}
-<a href="page-{{ '%03d'|format(page) }}.html">{{ page }}</a>
+<a href="page-{{ '%03d'|format(p) }}.html">{{ p }}</a>
 {%- endif %}
 {% endfor -%}
 {% if current_page < total_pages -%}
@@ -26,7 +67,19 @@
 {%- endif %}
 {% endmacro %}
 
-{# Pagination for index page #}
+{# Compact top pagination for index page #}
+{% macro index_pagination_compact(total_pages) %}
+{% if total_pages < 1 %}
+<div class="pagination-compact"><span class="page-info">Index</span></div>
+{%- else %}
+<div class="pagination-compact">
+<span class="page-info">Index &middot; {{ total_pages }} page{{ 's' if total_pages != 1 }}</span>
+<a href="page-001.html">Next &rarr;</a>
+</div>
+{%- endif %}
+{% endmacro %}
+
+{# Full bottom pagination for index page #}
 {% macro index_pagination(total_pages) %}
 {% if total_pages < 1 %}
 <div class="pagination"><span class="current">Index</span></div>
@@ -34,8 +87,14 @@
 <div class="pagination">
 <span class="current">Index</span>
 <span class="disabled">&larr; Prev</span>
-{% for page in range(1, total_pages + 1) -%}
-<a href="page-{{ '%03d'|format(page) }}.html">{{ page }}</a>
+{%- set page_list = _page_range(0, total_pages).split(',') -%}
+{% for p_str in page_list -%}
+{%- set p = p_str|trim|int -%}
+{% if p == 0 -%}
+<span class="ellipsis">&hellip;</span>
+{%- else -%}
+<a href="page-{{ '%03d'|format(p) }}.html">{{ p }}</a>
+{%- endif %}
 {% endfor -%}
 {% if total_pages >= 1 -%}
 <a href="page-001.html">Next &rarr;</a>
@@ -153,7 +212,7 @@
 
 {# Message wrapper - content_html is pre-rendered so needs |safe #}
 {% macro message(role_class, role_label, msg_id, timestamp, timestamp_title, content_html) %}
-<div class="message {{ role_class }}" id="{{ msg_id }}"><div class="message-header"><span class="role-label">{{ role_label }}</span><a href="#{{ msg_id }}" class="timestamp-link"><time datetime="{{ timestamp }}" data-timestamp="{{ timestamp }}" title="{{ timestamp_title }}">{{ timestamp }}</time></a></div><div class="message-content">{{ content_html|safe }}</div></div>
+<div class="message {{ role_class }}" id="{{ msg_id }}"><div class="message-header"><span class="role-label">{{ role_label }}</span><a href="#{{ msg_id }}" class="timestamp-link"><time datetime="{{ timestamp }}" data-timestamp="{{ timestamp }}" data-title="{{ timestamp_title }}">{{ timestamp }}</time><span class="tooltip">{{ timestamp_title }}</span></a></div><div class="message-content">{{ content_html|safe }}</div></div>
 {%- endmacro %}
 
 {# Continuation wrapper - content_html is pre-rendered so needs |safe #}

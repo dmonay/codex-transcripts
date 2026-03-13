@@ -6,15 +6,19 @@
         <div class="header-row">
             <h1><a href="../index.html" style="color: inherit; text-decoration: none;">Codex Archive</a> / {{ project_name }}</h1>
             {% if search_enabled %}
-            <div id="search-box" role="search">
+            <div class="header-actions">
                 <a class="home-btn" href="{{ archive_root }}index.html">Home</a>
-                <select id="search-project-select"></select>
-                <select id="search-sort-select"></select>
-                <input id="search-input" type="search" placeholder="Search sessions" autocomplete="off">
-                <button id="search-btn" type="button">Search</button>
             </div>
             {% endif %}
         </div>
+        {% if search_enabled %}
+        <div class="search-bar" id="search-box" role="search">
+            <select id="search-project-select"></select>
+            <select id="search-sort-select"></select>
+            <input id="search-input" type="search" placeholder="Search sessions" autocomplete="off">
+            <button id="search-btn" type="button">Search</button>
+        </div>
+        {% endif %}
         <p style="color: var(--text-muted); margin-bottom: 24px;">{{ session_count }} session{% if session_count != 1 %}s{% endif %}</p>
 
         {% for session in sessions %}
